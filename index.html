@@ -88,6 +88,14 @@
       background: linear-gradient(135deg, #56ab91, #3d9970);
       box-shadow: 0 6px 20px rgba(168, 230, 207, 0.6);
     }
+    .music-btn.playing {
+      background: linear-gradient(135deg, #ff6b9d, #c44569);
+      animation: musicPulse 1s infinite;
+    }
+    @keyframes musicPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
     .heart {
       position: fixed;
       color: #ff4d6d;
@@ -119,6 +127,22 @@
       0% { transform: scale(0); opacity: 1; }
       100% { transform: scale(1); opacity: 0; }
     }
+    .volume-control {
+      margin-top: 10px;
+      display: none;
+    }
+    .volume-control.show {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    input[type="range"] {
+      width: 150px;
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
@@ -127,34 +151,30 @@
     <p>Aku bikin ini khusus buat kamu, sebagai tanda kecil betapa aku sayang sama kamu. 💖</p>
     <div class="button-group">
       <button onclick="showLove()">Klik di sini 💌</button>
-      <button class="music-btn" onclick="toggleMusic()">🎶 <span id="music-status">Play Musik</span></button>
+      <button class="music-btn" id="music-btn" onclick="toggleMusic()">
+        🎶 <span id="music-status">Play Musik</span>
+      </button>
+      <div class="volume-control" id="volume-control">
+        <label style="color: white; font-size: 0.9rem;">Volume: <span id="volume-value">70</span>%</label>
+        <br>
+        <input type="range" id="volume-slider" min="0" max="100" value="70" oninput="changeVolume(this.value)">
+      </div>
     </div>
   </div>
 
-  <!-- Catatan: Audio tidak akan berfungsi tanpa file musik yang valid -->
+  <!-- Audio streaming dari internet - tidak perlu file lokal! -->
   <audio id="bg-music" loop preload="auto">
-    <source src="musik.mp3" type="audio/mpeg">
-    <source src="musik.ogg" type="audio/ogg">
-    <source src="musik.wav" type="audio/wav">
-    Browser kamu tidak mendukung audio element.
+    <source src="https://cdn.pixabay.com/audio/2022/03/10/audio_4521ef6e5b.mp3" type="audio/mpeg">
   </audio>
 
   <script>
-    let heartEmojis = ['💖', '💕', '💗', '💓', '💝', '❤️', '🥰'];
-    let musicLoaded = false;
-    
-    // Cek apakah musik bisa dimuat
+    let heartEmojis = ['💖', '💕', '💗', '💓', '💝', '❤️', '🥰', '😍', '🌹'];
     const music = document.getElementById("bg-music");
+    const musicBtn = document.getElementById("music-btn");
+    const volumeControl = document.getElementById("volume-control");
     
-    music.addEventListener('canplay', function() {
-      musicLoaded = true;
-      console.log("Musik berhasil dimuat!");
-    });
-    
-    music.addEventListener('error', function(e) {
-      console.error("Error loading musik:", e);
-      musicLoaded = false;
-    });
+    // Set volume default
+    music.volume = 0.7;
     
     function showLove() {
       // Alert dengan pesan
@@ -195,30 +215,32 @@
       const status = document.getElementById("music-status");
       
       if (music.paused) {
-        // Coba play musik
         const playPromise = music.play();
         
         if (playPromise !== undefined) {
           playPromise
             .then(() => {
               status.textContent = "Pause Musik";
-              console.log("Musik berhasil diputar!");
+              musicBtn.classList.add("playing");
+              volumeControl.classList.add("show");
+              console.log("Musik berhasil diputar! 🎵");
             })
             .catch(error => {
               console.error("Error:", error);
-              let errorMsg = "Musik tidak bisa diputar!\n\n";
-              errorMsg += "Kemungkinan penyebab:\n";
-              errorMsg += "1. File 'musik.mp3' tidak ditemukan\n";
-              errorMsg += "2. File musik corrupt atau format salah\n";
-              errorMsg += "3. Browser memblokir autoplay\n\n";
-              errorMsg += "Solusi: Pastikan file musik ada di folder yang sama dengan HTML ini!";
-              alert(errorMsg);
+              alert("Musik tidak bisa diputar. Coba klik tombolnya lagi! 🎵");
             });
         }
       } else {
         music.pause();
         status.textContent = "Play Musik";
+        musicBtn.classList.remove("playing");
+        volumeControl.classList.remove("show");
       }
+    }
+    
+    function changeVolume(value) {
+      music.volume = value / 100;
+      document.getElementById("volume-value").textContent = value;
     }
     
     // Efek hati otomatis setiap beberapa detik
@@ -227,6 +249,15 @@
         createHeart();
       }
     }, 2000);
+    
+    // Event listener untuk loading musik
+    music.addEventListener('canplay', function() {
+      console.log("✅ Musik siap diputar!");
+    });
+    
+    music.addEventListener('error', function(e) {
+      console.error("❌ Error loading musik:", e);
+    });
   </script>
 </body>
 </html>
