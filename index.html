@@ -130,10 +130,10 @@
     .volume-control {
       margin-top: 10px;
       display: none;
+      animation: slideDown 0.3s ease;
     }
     .volume-control.show {
       display: block;
-      animation: slideDown 0.3s ease;
     }
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-10px); }
@@ -142,6 +142,24 @@
     input[type="range"] {
       width: 150px;
       margin: 10px 0;
+      cursor: pointer;
+    }
+    .music-note {
+      position: fixed;
+      font-size: 24px;
+      pointer-events: none;
+      animation: floatNote 3s ease-out forwards;
+      z-index: 999;
+    }
+    @keyframes floatNote {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+      }
     }
   </style>
 </head>
@@ -162,11 +180,9 @@
     </div>
   </div>
 
-  <!-- Audio streaming dari internet - tidak perlu file lokal! -->
-  <audio id="bg-music" loop preload="auto" crossorigin="anonymous">
-    <source src="https://cdn.pixabay.com/audio/2022/03/10/audio_4521ef6e5b.mp3" type="audio/mpeg">
-    <source src="https://cdn.pixabay.com/audio/2022/05/13/audio_11196bcbf5.mp3" type="audio/mpeg">
-    <source src="https://cdn.pixabay.com/audio/2022/10/25/audio_13c89a286d.mp3" type="audio/mpeg">
+  <!-- PAKAI FILE MUSIK LOKAL - Pastikan file musik.mp3 ada di folder yang sama! -->
+  <audio id="bg-music" loop>
+    <source src="musik.mp3" type="audio/mpeg">
   </audio>
 
   <script>
@@ -174,26 +190,18 @@
     const music = document.getElementById("bg-music");
     const musicBtn = document.getElementById("music-btn");
     const volumeControl = document.getElementById("volume-control");
-    let hasInteracted = false;
+    let musicNoteInterval;
     
     // Set volume default
     music.volume = 0.7;
     
-    // Deteksi interaksi pertama user
-    document.addEventListener('click', function() {
-      hasInteracted = true;
-    }, { once: true });
-    
     function showLove() {
-      // Alert dengan pesan
-      alert("Lope uuu 💕");
+      alert("Lope uuu ❤️\n\nKamu adalah yang terbaik! 💕");
       
-      // Buat banyak hati
       for (let i = 0; i < 30; i++) {
         setTimeout(() => createHeart(), i * 100);
       }
       
-      // Efek sparkle
       for (let i = 0; i < 15; i++) {
         setTimeout(() => createSparkle(), i * 50);
       }
@@ -219,30 +227,48 @@
       setTimeout(() => sparkle.remove(), 1000);
     }
     
+    function createMusicNote() {
+      const notes = ['🎵', '🎶', '♪', '♫'];
+      const note = document.createElement("div");
+      note.className = "music-note";
+      note.innerHTML = notes[Math.floor(Math.random() * notes.length)];
+      note.style.left = (30 + Math.random() * 40) + "vw";
+      note.style.top = "70vh";
+      document.body.appendChild(note);
+      setTimeout(() => note.remove(), 3000);
+    }
+    
     function toggleMusic() {
       const status = document.getElementById("music-status");
       
       if (music.paused) {
-        const playPromise = music.play();
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              status.textContent = "Pause Musik";
-              musicBtn.classList.add("playing");
-              volumeControl.classList.add("show");
-              console.log("Musik berhasil diputar! 🎵");
-            })
-            .catch(error => {
-              console.error("Error:", error);
-              alert("Musik tidak bisa diputar. Coba klik tombolnya lagi! 🎵");
-            });
-        }
+        music.play()
+          .then(() => {
+            status.textContent = "Pause Musik";
+            musicBtn.classList.add("playing");
+            volumeControl.classList.add("show");
+            
+            // Mulai animasi not musik
+            musicNoteInterval = setInterval(() => {
+              createMusicNote();
+            }, 1500);
+            
+            console.log("✅ Musik berhasil diputar!");
+          })
+          .catch(error => {
+            console.error("Error:", error);
+            alert("Pastikan file 'musik.mp3' ada di folder yang sama dengan HTML ini! 🎵");
+          });
       } else {
         music.pause();
         status.textContent = "Play Musik";
         musicBtn.classList.remove("playing");
         volumeControl.classList.remove("show");
+        
+        // Stop animasi not musik
+        if (musicNoteInterval) {
+          clearInterval(musicNoteInterval);
+        }
       }
     }
     
@@ -257,15 +283,6 @@
         createHeart();
       }
     }, 2000);
-    
-    // Event listener untuk loading musik
-    music.addEventListener('canplay', function() {
-      console.log("✅ Musik siap diputar!");
-    });
-    
-    music.addEventListener('error', function(e) {
-      console.error("❌ Error loading musik:", e);
-    });
   </script>
 </body>
 </html>
